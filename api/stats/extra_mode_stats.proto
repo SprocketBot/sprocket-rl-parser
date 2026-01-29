@@ -1,0 +1,19 @@
+syntax = "proto2";
+
+import "api/stats/dropshot.proto";
+import "api/stats/rumble.proto";
+
+package api.stats;
+
+message ExtraModeGoalInfo {
+    optional bool pre_items = 1;
+    optional bool scored_with_item = 2;
+    optional PowerUp used_item = 3;
+    optional DropshotTile dropshot_tile = 4;
+    optional int32 phase_1_tiles = 5;
+    optional int32 phase_2_tiles = 6;
+}
+
+message ExtraModeBallStats {
+    repeated DropshotBallPhaseStats dropshot_phase_stats = 1;
+}

@@ -1,0 +1,123 @@
+syntax = "proto2";
+
+import "api/player_id.proto";
+import "api/stats/stats.proto";
+import "api/stats/rumble.proto";
+import "api/team.proto";
+
+package api.stats;
+
+message BallData {
+    optional float pos_x = 1;
+    optional float pos_y = 2;
+    optional float pos_z = 3;
+}
+
+message Hit {
+    optional int32 frame_number = 1;
+    optional api.PlayerId player_id = 2;
+    // How far the player center of mass from the player to the center of mass of the car at the frame of this hit.
+    optional float collision_distance = 3;
+    optional BallData ball_data = 4;
+
+    // Derived values
+    optional bool pass_ = 5;
+    optional bool passed = 6;
+    optional bool dribble = 7;
+    optional bool dribble_continuation = 8;
+    optional bool shot = 9;
+    optional bool goal = 10;
+
+    optional bool assist = 12;
+    optional bool assisted = 13;
+    optional bool save = 14;
+    // Ball is above 800 units
+    optional bool aerial = 15;
+    optional bool on_ground = 16; // TODO: CALCULATE
+    // Distance the ball travels from the current hit till the next hit.
+    optional float distance = 17;
+    // Distance from the ball to the center of the goal.
+    optional float distance_to_goal = 18;
+
+    optional int32 previous_hit_frame_number = 19;
+    optional int32 next_hit_frame_number = 20;
+
+    // What goal number this hit belongs to:
+    // it starts at 0 and counts up,  -1 means no more kickoffs will happen.
+    optional int32 goal_number = 21;
+
+    // True if this hit is detected as the first hit for a kickoff.
+    optional bool is_kickoff = 22;
+
+    optional bool clear = 23;
+
+    // Scales from 100 to 0;
+    // 100 indicates an opponent was right on top of this hit.
+    // 0 indicates the hit was made with little to no defending pressure.
+    optional int32 pressure = 24;
+
+    optional bool dunk = 25;
+
+    // pseudo stats
+    // is_turnover = !(goal || dribble || pass)
+
+    // DEPRECATED STATS
+    optional bool DEPRECATED_field_goal_number = 11;
+}
+
+// Not Implemented
+message Bump {
+    optional int32 frame_number = 1;
+    optional api.PlayerId attacker_id = 2;
+    optional api.PlayerId victim_id = 3;
+    optional bool is_demo = 4;
+    optional bool is_in_goal_location = 5;  // If the goal occurs in the 1/3rd of the field
+    optional bool goal = 6;
+    optional bool save = 7;
+    optional bool is_revenge = 8;
+}
+
+// Not Implemented
+message CameraChange {
+    optional int32 frame_number = 1;
+    optional api.PlayerId player_id = 2;
+    optional float distance_from_ball = 3;
+    optional bool is_in_possession = 4; // True if the player making the change has possession of the ball
+    optional float length_in_this_mode = 5;
+    optional bool is_on_ball_cam = 6;
+}
+
+message FiftyFifty {
+    optional int32 starting_frame = 1;
+    optional int32 ending_frame = 2;
+    repeated int32 hits = 3; // indices of hit included in this fifty-fifty
+    repeated api.PlayerId players = 4;
+    optional api.PlayerId winner = 5;
+    optional bool is_neutral = 7;
+}
+
+message Kickoff {
+    optional int32 start_frame_number = 1;
+    optional int32 end_frame_number = 2;
+}
+
+// Events where the car carried the ball on its top.
+message BallCarry {
+    optional int32 start_frame_number = 1;
+    optional int32 end_frame_number = 2;
+    optional api.PlayerId player_id = 3;
+    optional bool has_flick = 4; // True if the dribble ended in a flick
+    optional float carry_time = 5;
+    optional float straight_line_distance = 6; // This is just the start/end distance traveled. It is NOT distance along path
+
+    // Stats
+    optional DetailedCarryStats carry_stats = 7;
+}
+
+message RumbleItemEvent {
+    optional int32 frame_number_get = 1;
+    optional int32 frame_number_use = 2 [default = -1];
+    optional api.stats.PowerUp item = 3;
+    optional api.PlayerId player_id = 4;
+    optional api.PlayerId victim_id = 5; // TODO Not implemented, including ball target as things like plunger can fail
+}

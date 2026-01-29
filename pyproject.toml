@@ -1,0 +1,37 @@
+[build-system]
+requires = ["maturin>=1.7,<2.0"]
+build-backend = "maturin"
+
+[project]
+name = "sprocket-rl-parser"
+version = "1.2.2"
+description = "Rocket League replay parsing and analysis."
+readme = "README.md"
+requires-python = ">=3.7"
+authors = [
+    { name = "Sprocket Dev Team", email = "asaxplayinghorse@gmail.com" },
+]
+license = { text = "Apache 2.0" }
+keywords = ["rocket-league"]
+classifiers = [
+    "Programming Language :: Rust",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Programming Language :: Python :: Implementation :: PyPy",
+    "License :: OSI Approved :: Apache Software License",
+    "Development Status :: 4 - Beta",
+]
+dependencies = [
+    "pandas",
+    "protobuf>=5.29.3,<6.0.0",
+    "openpyxl",
+    "numpy",
+]
+
+[project.scripts]
+carball = "parser.command_line:main"
+
+[tool.maturin]
+features = ["pyo3/extension-module"]
+module-name = "parser._lib"
+python-source = "."
+include = ["api/**/*.proto", "utils/**/*.py"]

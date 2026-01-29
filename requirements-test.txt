@@ -1,0 +1,9 @@
+twine
+pytest>=5.4.1
+pytest-benchmark
+requests
+pytest-cov>=2.8.1
+coverage
+codecov
+pep8
+autopep8

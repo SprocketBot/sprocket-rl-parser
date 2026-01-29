@@ -1,0 +1,13 @@
+/Users/jacbaile/Workspace/MLE/boxcars-py/target/debug/deps/pyo3_build_config-dd632ec9534629a4.d: /Users/jacbaile/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/pyo3-build-config-0.18.3/src/lib.rs /Users/jacbaile/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/pyo3-build-config-0.18.3/src/errors.rs /Users/jacbaile/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/pyo3-build-config-0.18.3/src/impl_.rs /Users/jacbaile/Workspace/MLE/boxcars-py/target/debug/build/pyo3-build-config-27a64f16acbf79a6/out/pyo3-build-config-file.txt /Users/jacbaile/Workspace/MLE/boxcars-py/target/debug/build/pyo3-build-config-27a64f16acbf79a6/out/pyo3-build-config.txt
+
+/Users/jacbaile/Workspace/MLE/boxcars-py/target/debug/deps/libpyo3_build_config-dd632ec9534629a4.rlib: /Users/jacbaile/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/pyo3-build-config-0.18.3/src/lib.rs /Users/jacbaile/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/pyo3-build-config-0.18.3/src/errors.rs /Users/jacbaile/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/pyo3-build-config-0.18.3/src/impl_.rs /Users/jacbaile/Workspace/MLE/boxcars-py/target/debug/build/pyo3-build-config-27a64f16acbf79a6/out/pyo3-build-config-file.txt /Users/jacbaile/Workspace/MLE/boxcars-py/target/debug/build/pyo3-build-config-27a64f16acbf79a6/out/pyo3-build-config.txt
+
+/Users/jacbaile/Workspace/MLE/boxcars-py/target/debug/deps/libpyo3_build_config-dd632ec9534629a4.rmeta: /Users/jacbaile/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/pyo3-build-config-0.18.3/src/lib.rs /Users/jacbaile/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/pyo3-build-config-0.18.3/src/errors.rs /Users/jacbaile/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/pyo3-build-config-0.18.3/src/impl_.rs /Users/jacbaile/Workspace/MLE/boxcars-py/target/debug/build/pyo3-build-config-27a64f16acbf79a6/out/pyo3-build-config-file.txt /Users/jacbaile/Workspace/MLE/boxcars-py/target/debug/build/pyo3-build-config-27a64f16acbf79a6/out/pyo3-build-config.txt
+
+/Users/jacbaile/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/pyo3-build-config-0.18.3/src/lib.rs:
+/Users/jacbaile/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/pyo3-build-config-0.18.3/src/errors.rs:
+/Users/jacbaile/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/pyo3-build-config-0.18.3/src/impl_.rs:
+/Users/jacbaile/Workspace/MLE/boxcars-py/target/debug/build/pyo3-build-config-27a64f16acbf79a6/out/pyo3-build-config-file.txt:
+/Users/jacbaile/Workspace/MLE/boxcars-py/target/debug/build/pyo3-build-config-27a64f16acbf79a6/out/pyo3-build-config.txt:
+
+# env-dep:OUT_DIR=/Users/jacbaile/Workspace/MLE/boxcars-py/target/debug/build/pyo3-build-config-27a64f16acbf79a6/out

@@ -1,0 +1,66 @@
+syntax = "proto2";
+
+package api.stats;
+
+message Possession {
+    optional double possession_time = 1;
+    optional int32 turnovers = 2;
+    optional int32 turnovers_on_my_half = 3;
+    optional int32 turnovers_on_their_half = 4;
+    //  This player was the first hit on a turnover
+    optional int32 won_turnovers = 5;
+}
+
+message PositionalTendencies {
+    optional float time_on_ground = 1;
+    optional float time_low_in_air = 2;
+    optional float time_high_in_air = 3;
+    optional float time_in_defending_half = 4;
+    optional float time_in_attacking_half = 5;
+    optional float time_in_defending_third = 6;
+    optional float time_in_neutral_third = 7;
+    optional float time_in_attacking_third = 8;
+    optional float time_behind_ball = 9;
+    optional float time_in_front_ball = 10;
+    optional float time_near_wall = 11;
+    optional float time_in_corner = 12;
+    optional float time_on_wall = 13;
+}
+
+message Averages {
+    optional float average_speed = 1;
+    optional float average_hit_distance = 2;
+    // Average distance for this player from the team center
+    // Average distance for the ball to the field center
+    optional float average_distance_from_center = 3;
+}
+
+message HitCounts {
+    // counts the number of hits of each type
+    optional int32 total_hits = 1;
+    optional int32 total_goals = 2;
+    optional int32 total_passes = 3;
+    optional int32 total_saves = 4;
+    optional int32 total_shots = 5;
+    optional int32 total_dribbles = 6;
+    optional int32 total_dribble_conts = 7;
+    optional int32 total_aerials = 8;
+    optional int32 total_clears = 9;
+}
+
+message Speed {
+    optional float time_at_slow_speed = 1; // Time when car is < 700uu/s
+    optional float time_at_super_sonic = 2; // time when car is > 2200
+    optional float time_at_boost_speed = 3; // time when car is > 1410
+}
+
+message DetailedCarryStats {
+    optional float average_z_distance = 1; // avg distance of ball z - player z
+    optional float average_xy_distance = 2;
+    optional float average_ball_z_velocity = 3;
+    optional float variance_xy_distance = 4;
+    optional float variance_z_distance = 5;
+    optional float variance_ball_z_velocity = 6;
+    optional float average_carry_speed = 7; // Your speed while dribbling the ball
+    optional float distance_along_path = 8; // Your speed while dribbling the ball
+}
