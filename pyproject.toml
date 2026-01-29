@@ -28,10 +28,14 @@ dependencies = [
 ]
 
 [project.scripts]
-carball = "parser.command_line:main"
+carball = "carball.command_line:main"
 
 [tool.maturin]
+
 features = ["pyo3/extension-module"]
-module-name = "parser._lib"
+
+module-name = "carball._lib"
+
 python-source = "."
+
 include = ["api/**/*.proto", "utils/**/*.py"]

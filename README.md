@@ -5,8 +5,13 @@ An open-source project for decompiling and analyzing Rocket League replays.
 `pip install sprocket-rl-parser`
 
 ## Usage
+
 ```python
-import parser
-analysis_manager = parser.analyze_replay_file('replay.replay')
+
+import carball
+
+analysis_manager = carball.analyze_replay_file('replay.replay')
+
 proto_game = analysis_manager.get_protobuf_data()
+
 ```

@@ -10,7 +10,7 @@ def is_windows():
 current_dir = os.path.dirname(os.path.dirname(__file__))
 
 
-proto_dir = os.path.join(current_dir, 'parser', 'generated')
+proto_dir = os.path.join(current_dir, 'carball', 'generated')
 
 
 def get_proto():
