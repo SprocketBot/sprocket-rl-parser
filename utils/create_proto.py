@@ -14,8 +14,18 @@ proto_dir = os.path.join(current_dir, 'parser', 'generated')
 
 
 def get_proto():
-    if os.getenv('PROTOC_PATH'):
-        return os.getenv('PROTOC_PATH')
+    # Check common environment variables
+    for env_var in ['PROTOC_PATH', 'PROTOC']:
+        val = os.getenv(env_var)
+        if val:
+            # Some actions set PROTOC to the actual binary path
+            if os.path.exists(val):
+                return val
+            # Others might set it to the command name
+            import shutil
+            result = shutil.which(val)
+            if result:
+                return result
 
     import shutil
     result = shutil.which('protoc')
@@ -23,13 +33,11 @@ def get_proto():
         return result
 
     if is_windows():
-        # Check if protoc.exe is in the generated folder (legacy behavior)
         legacy_path = os.path.join(proto_dir, 'protoc.exe')
         if os.path.exists(legacy_path):
             return legacy_path
     else:
-        # Check common locations if shutil.which failed
-        for path in ['/usr/local/bin/protoc', '/usr/bin/protoc']:
+        for path in ['/usr/local/bin/protoc', '/usr/bin/protoc', '/opt/homebrew/bin/protoc']:
             if os.path.exists(path):
                 return path
         
@@ -37,6 +45,8 @@ def get_proto():
         if os.path.exists(legacy_path):
             return legacy_path
     
+    print(f"DEBUG: PATH is {os.getenv('PATH')}")
+    print(f"DEBUG: PROTOC env is {os.getenv('PROTOC')}")
     raise FileNotFoundError("Could not find 'protoc'. Please install protobuf compiler and ensure it is in your PATH, or set PROTOC_PATH.")
 
 

@@ -35,8 +35,17 @@ jobs:
       with:
         repo-token: ${{ secrets.GITHUB_TOKEN }}
 
+    - name: Verify protoc
+      shell: bash
+      run: |
+        protoc --version
+        which protoc
+        echo "PROTOC=$(which protoc)" >> $GITHUB_ENV
+
     - name: Build wheels
       uses: PyO3/maturin-action@v1
+      env:
+        PROTOC: ${{ env.PROTOC }}
       with:
         target: ${{ matrix.target }}
         args: --release --out dist --find-interpreter
@@ -70,8 +79,17 @@ jobs:
       with:
         repo-token: ${{ secrets.GITHUB_TOKEN }}
 
+    - name: Verify protoc
+      shell: bash
+      run: |
+        protoc --version
+        which protoc
+        echo "PROTOC=$(which protoc)" >> $GITHUB_ENV
+
     - name: Build sdist
       uses: PyO3/maturin-action@v1
+      env:
+        PROTOC: ${{ env.PROTOC }}
       with:
         command: sdist
         args: --out dist
