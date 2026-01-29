@@ -2,7 +2,7 @@
 *.pyc
 replays/
 venv/
-/**/generated/**/*.py
+!carball/generated/**/*.py
 output
 .env
 .coverage
