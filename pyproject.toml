@@ -34,7 +34,6 @@ carball = "carball.command_line:main"
 features = ["pyo3/extension-module"]
 module-name = "carball._lib"
 python-source = "."
-compatibility = "abi3"
 include = ["api/**/*.proto", "utils/**/*.py"]
 exclude = [
     "target/**",

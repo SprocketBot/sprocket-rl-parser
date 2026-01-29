@@ -149,10 +149,9 @@ jobs:
         with:
           target: ${{ matrix.target }}
           maturin-version: "1.11.5"
-          args: --release --out dist
+          args: --release --out dist --interpreter 3.8 3.9 3.10 3.11 3.12
           sccache: 'true'
           manylinux: auto
-          musllinux: auto
         env:
           PROTOC: protoc
 
