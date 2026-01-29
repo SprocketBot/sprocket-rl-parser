@@ -30,26 +30,25 @@ jobs:
       with:
         python-version: '3.11'
 
-    - name: Install protobuf compiler
-      uses: arduino/setup-protoc@v3
-      with:
-        repo-token: ${{ secrets.GITHUB_TOKEN }}
+    - name: Install Protoc (macOS)
+      if: runner.os == 'macOS'
+      run: brew install protobuf
 
-    - name: Verify protoc
-      shell: bash
-      run: |
-        protoc --version
-        which protoc
-        echo "PROTOC=$(which protoc)" >> $GITHUB_ENV
+    - name: Install Protoc (Windows)
+      if: runner.os == 'Windows'
+      run: choco install protoc
 
     - name: Build wheels
       uses: PyO3/maturin-action@v1
-      env:
-        PROTOC: ${{ env.PROTOC }}
       with:
         target: ${{ matrix.target }}
         args: --release --out dist --find-interpreter
         sccache: 'true'
+        before-script-linux: |
+          apt-get update
+          apt-get install -y protobuf-compiler
+      env:
+        PROTOC: protoc
 
     - name: Test wheel installation
       shell: bash
@@ -74,25 +73,18 @@ jobs:
       with:
         python-version: '3.11'
 
-    - name: Install protobuf compiler
-      uses: arduino/setup-protoc@v3
-      with:
-        repo-token: ${{ secrets.GITHUB_TOKEN }}
-
-    - name: Verify protoc
-      shell: bash
+    - name: Install Protoc (Linux)
       run: |
-        protoc --version
-        which protoc
-        echo "PROTOC=$(which protoc)" >> $GITHUB_ENV
+        sudo apt-get update
+        sudo apt-get install -y protobuf-compiler
 
     - name: Build sdist
       uses: PyO3/maturin-action@v1
-      env:
-        PROTOC: ${{ env.PROTOC }}
       with:
         command: sdist
         args: --out dist
+      env:
+        PROTOC: protoc
 
     - name: Upload sdist
       uses: actions/upload-artifact@v4
