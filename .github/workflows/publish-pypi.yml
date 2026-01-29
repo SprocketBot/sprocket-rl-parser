@@ -133,9 +133,6 @@ jobs:
 
       - name: Install Protoc
         uses: arduino/setup-protoc@v3
-        with:
-          version: "29.x"
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Update version in pyproject.toml
         shell: bash
@@ -164,15 +161,11 @@ jobs:
           target: ${{ matrix.target }}
           args: --release --out dist --interpreter 3.8 3.9 3.10 3.11 3.12
           manylinux: auto
-        env:
-          PROTOC: protoc
 
       - name: Build wheels (Other platforms)
         if: matrix.target != 'aarch64-unknown-linux-gnu'
         run: |
           maturin build --release --target ${{ matrix.target }} --out dist -i python3.11
-        env:
-          PROTOC: protoc
 
       - name: Upload wheels
         uses: actions/upload-artifact@v4
