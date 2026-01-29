@@ -1,0 +1,200 @@
+name: Build and Publish to PyPI
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+  schedule:
+    - cron: '0 0 * * *'  # Daily at midnight UTC
+
+jobs:
+  check-version:
+    runs-on: ubuntu-latest
+    outputs:
+      should_publish: ${{ steps.check.outputs.should_publish }}
+      new_version: ${{ steps.check.outputs.new_version }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install toml requests
+
+      - name: Check if dependencies changed
+        id: check
+        run: |
+          python << 'EOF'
+          import toml
+          import requests
+          import os
+
+          # Read current Cargo.toml
+          with open('Cargo.toml', 'r') as f:
+              cargo_toml = toml.load(f)
+
+          # Read current pyproject.toml
+          with open('pyproject.toml', 'r') as f:
+              pyproject = toml.load(f)
+
+          current_version = pyproject['project']['version']
+
+          # Get boxcars dependency version
+          boxcars_version = cargo_toml['dependencies']['boxcars']
+          if isinstance(boxcars_version, dict):
+              boxcars_version = boxcars_version.get('version', '')
+
+          # Check latest version on PyPI
+          try:
+              response = requests.get('https://pypi.org/pypi/sprocket-boxcars-py/json')
+              if response.status_code == 200:
+                  pypi_data = response.json()
+                  latest_pypi_version = pypi_data['info']['version']
+
+                  # Check if PyPI package has same boxcars version in metadata
+                  # We'll compare versions to see if we need to bump
+                  print(f"Current PyPI version: {latest_pypi_version}")
+                  print(f"Current local version: {current_version}")
+                  print(f"Boxcars dependency: {boxcars_version}")
+
+                  # For now, we'll trigger a publish if workflow is manually triggered
+                  # or if it's been a day and there might be updates
+                  should_publish = "true"
+
+                  # Calculate new version (bump patch)
+                  parts = latest_pypi_version.split('.')
+                  new_patch = int(parts[2]) + 1
+                  new_version = f"{parts[0]}.{parts[1]}.{new_patch}"
+              else:
+                  # Package doesn't exist on PyPI yet
+                  should_publish = "true"
+                  new_version = current_version
+          except Exception as e:
+              print(f"Error checking PyPI: {e}")
+              should_publish = "true"
+              new_version = current_version
+
+          # Set outputs
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+              f.write(f"should_publish={should_publish}\n")
+              f.write(f"new_version={new_version}\n")
+
+          print(f"Should publish: {should_publish}")
+          print(f"New version: {new_version}")
+          EOF
+
+  build:
+    needs: check-version
+    if: needs.check-version.outputs.should_publish == 'true'
+    strategy:
+      matrix:
+        include:
+          # Linux x86_64
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+
+          # Linux aarch64
+          - os: ubuntu-latest
+            target: aarch64-unknown-linux-gnu
+
+          # macOS x86_64
+          - os: macos-15
+            target: x86_64-apple-darwin
+
+          # macOS aarch64 (Apple Silicon)
+          - os: macos-15
+            target: aarch64-apple-darwin
+
+          # Windows x86_64
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Install maturin
+        run: pip install maturin
+
+      - name: Update version in pyproject.toml
+        shell: bash
+        run: |
+          VERSION="${{ needs.check-version.outputs.new_version }}"
+          if [[ "$OSTYPE" == "darwin"* ]]; then
+            sed -i '' "s/^version = .*/version = \"$VERSION\"/" pyproject.toml
+          else
+            sed -i "s/^version = .*/version = \"$VERSION\"/" pyproject.toml
+          fi
+
+      - name: Update version in Cargo.toml
+        shell: bash
+        run: |
+          VERSION="${{ needs.check-version.outputs.new_version }}"
+          if [[ "$OSTYPE" == "darwin"* ]]; then
+            sed -i '' "s/^version = .*/version = \"$VERSION\"/" Cargo.toml
+          else
+            sed -i "s/^version = .*/version = \"$VERSION\"/" Cargo.toml
+          fi
+
+      - name: Build wheels (Linux aarch64)
+        if: matrix.target == 'aarch64-unknown-linux-gnu'
+        uses: PyO3/maturin-action@v1
+        with:
+          target: ${{ matrix.target }}
+          args: --release --out dist --interpreter 3.8 3.9 3.10 3.11 3.12
+          manylinux: auto
+
+      - name: Build wheels (Other platforms)
+        if: matrix.target != 'aarch64-unknown-linux-gnu'
+        run: |
+          maturin build --release --target ${{ matrix.target }} --out dist -i python3.11
+
+      - name: Upload wheels
+        uses: actions/upload-artifact@v4
+        with:
+          name: wheels-${{ matrix.target }}
+          path: dist
+
+  publish:
+    needs: [check-version, build]
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/sprocket-boxcars-py
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all wheels
+        uses: actions/download-artifact@v4
+        with:
+          path: dist-all
+
+      - name: Merge wheels
+        run: |
+          mkdir -p dist
+          find dist-all -name '*.whl' -exec cp {} dist/ \;
+          find dist-all -name '*.tar.gz' -exec cp {} dist/ \;
+          ls -lah dist/
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: dist/
+          skip-existing: true
