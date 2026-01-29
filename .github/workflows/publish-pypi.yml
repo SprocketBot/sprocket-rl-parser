@@ -144,6 +144,7 @@ jobs:
         uses: PyO3/maturin-action@v1
         with:
           target: ${{ matrix.target }}
+          maturin-version: ">=1.11.0"
           args: --release --out dist --interpreter 3.8 3.9 3.10 3.11 3.12
           sccache: 'true'
           manylinux: auto
@@ -175,6 +176,7 @@ jobs:
         uses: PyO3/maturin-action@v1
         with:
           command: sdist
+          maturin-version: ">=1.11.0"
           args: --out dist
         env:
           PROTOC: protoc
