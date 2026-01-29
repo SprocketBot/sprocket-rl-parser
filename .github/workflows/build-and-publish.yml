@@ -30,13 +30,11 @@ jobs:
       with:
         python-version: '3.11'
 
-    - name: Install Protoc (macOS)
-      if: runner.os == 'macOS'
-      run: brew install protobuf
-
-    - name: Install Protoc (Windows)
-      if: runner.os == 'Windows'
-      run: choco install protoc
+    - name: Install Protoc
+      uses: arduino/setup-protoc@v3
+      with:
+        version: "29.x"
+        repo-token: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Build wheels
       uses: PyO3/maturin-action@v1
@@ -44,18 +42,8 @@ jobs:
         target: ${{ matrix.target }}
         args: --release --out dist --find-interpreter
         sccache: 'true'
-        before-script-linux: |
-          PROTOC_VERSION=29.3
-          if [ "$(uname -m)" = "x86_64" ]; then
-            ARCH="x86_64"
-          else
-            ARCH="aarch64"
-          fi
-          curl -LO https://github.com/protocolbuffers/protobuf/releases/download/v${PROTOC_VERSION}/protoc-${PROTOC_VERSION}-linux-${ARCH}.zip
-          unzip -o protoc-*.zip -d /usr/local
-          chmod +x /usr/local/bin/protoc
       env:
-        PROTOC: /usr/local/bin/protoc
+        PROTOC: protoc
 
     - name: Test wheel installation
       shell: bash
@@ -80,10 +68,11 @@ jobs:
       with:
         python-version: '3.11'
 
-    - name: Install Protoc (Linux)
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y protobuf-compiler
+    - name: Install Protoc
+      uses: arduino/setup-protoc@v3
+      with:
+        version: "29.x"
+        repo-token: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Build sdist
       uses: PyO3/maturin-action@v1
