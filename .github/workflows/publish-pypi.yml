@@ -157,37 +157,8 @@ jobs:
           name: wheels-${{ matrix.target }}
           path: dist
 
-  build_sdist:
-    needs: check-version
-    if: needs.check-version.outputs.should_publish == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-      - name: Install Protoc
-        uses: arduino/setup-protoc@v3
-        with:
-          version: "29.x"
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
-      - name: Build sdist
-        uses: PyO3/maturin-action@v1
-        with:
-          command: sdist
-          maturin-version: "1.11.5"
-          args: --out dist
-        env:
-          PROTOC: protoc
-      - name: Upload sdist
-        uses: actions/upload-artifact@v4
-        with:
-          name: sdist
-          path: dist
-
   publish:
-    needs: [check-version, build, build_sdist]
+    needs: [check-version, build]
     runs-on: ubuntu-latest
     environment:
       name: pypi
@@ -206,7 +177,6 @@ jobs:
         run: |
           mkdir -p dist
           find dist-all -name '*.whl' -exec cp {} dist/ \;
-          find dist-all -name '*.tar.gz' -exec cp {} dist/ \;
           ls -lah dist/
 
       - name: Publish to PyPI
