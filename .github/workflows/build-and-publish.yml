@@ -45,10 +45,17 @@ jobs:
         args: --release --out dist --find-interpreter
         sccache: 'true'
         before-script-linux: |
-          apt-get update
-          apt-get install -y protobuf-compiler
+          PROTOC_VERSION=29.3
+          if [ "$(uname -m)" = "x86_64" ]; then
+            ARCH="x86_64"
+          else
+            ARCH="aarch64"
+          fi
+          curl -LO https://github.com/protocolbuffers/protobuf/releases/download/v${PROTOC_VERSION}/protoc-${PROTOC_VERSION}-linux-${ARCH}.zip
+          unzip -o protoc-*.zip -d /usr/local
+          chmod +x /usr/local/bin/protoc
       env:
-        PROTOC: protoc
+        PROTOC: /usr/local/bin/protoc
 
     - name: Test wheel installation
       shell: bash
