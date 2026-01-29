@@ -31,11 +31,19 @@ dependencies = [
 carball = "carball.command_line:main"
 
 [tool.maturin]
-
 features = ["pyo3/extension-module"]
-
 module-name = "carball._lib"
-
 python-source = "."
-
 include = ["api/**/*.proto", "utils/**/*.py"]
+exclude = [
+    "target/**",
+    "venv/**",
+    ".git/**",
+    "*.replay",
+    "*.dll",
+    "*.png",
+    "**/*.pyc",
+    "__pycache__/**",
+    "build/**",
+    "dist/**",
+]
