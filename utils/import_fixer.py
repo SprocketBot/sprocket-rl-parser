@@ -100,7 +100,7 @@ def convert_to_relative_imports(top_level_dir='generated', exclude_dir=None, top
     add_inits(top_level_dir)
 
 
-# prevent_leaks("carball", "generated", "carball")
+# prevent_leaks("parser", "generated", "parser")
 if __name__ == '__main__':
     convert_to_relative_imports()
 

@@ -1,6 +1,0 @@
-include requirements.txt
-include CARBALL_VERSION
-include init.py
-include carball/analysis/*
-recursive-include carball/generated *.py
-recursive-include carball *.xlsx

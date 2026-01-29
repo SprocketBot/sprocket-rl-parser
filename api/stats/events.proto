@@ -3,7 +3,6 @@ syntax = "proto2";
 import "api/player_id.proto";
 import "api/stats/stats.proto";
 import "api/stats/rumble.proto";
-import "api/team.proto";
 
 package api.stats;
 

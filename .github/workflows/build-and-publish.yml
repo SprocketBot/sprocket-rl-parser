@@ -2,14 +2,11 @@ name: Build and Publish to PyPI
 
 on:
   push:
-    branches: [ master ]
+    branches: [ main ]
   pull_request:
-    branches: [ master ]
+    branches: [ main ]
   release:
     types: [ published ]
-  schedule:
-    # Run weekly on Monday at 00:00 UTC to catch dependency updates
-    - cron: '0 0 * * 1'
   workflow_dispatch:
     inputs:
       publish:
@@ -19,8 +16,11 @@ on:
 
 jobs:
   build_wheels:
-    name: Build universal Python wheel
-    runs-on: ubuntu-latest
+    name: Build wheels on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
 
     steps:
     - uses: actions/checkout@v4
@@ -31,37 +31,28 @@ jobs:
         python-version: '3.11'
 
     - name: Install protobuf compiler
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y wget unzip
-        wget https://github.com/protocolbuffers/protobuf/releases/download/v29.3/protoc-29.3-linux-x86_64.zip
-        sudo unzip protoc-29.3-linux-x86_64.zip -d /usr/local
-        protoc --version
+      uses: arduino/setup-protoc@v3
+      with:
+        repo-token: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip setuptools wheel
-        pip install numpy 'protobuf>=5.29.3,<6.0.0' pandas sprocket-boxcars-py openpyxl
-
-    - name: Generate protobuf files
-      run: |
-        python utils/create_proto.py
-        python utils/import_fixer.py
-
-    - name: Build wheel
-      run: python -m pip wheel -w wheelhouse --no-deps .
+    - name: Build wheels
+      uses: PyO3/maturin-action@v1
+      with:
+        target: ${{ matrix.target }}
+        args: --release --out dist --find-interpreter
+        sccache: 'true'
 
     - name: Test wheel installation
+      shell: bash
       run: |
-        pip install wheelhouse/*.whl
-        python -c "import carball; print('Import successful')"
+        pip install dist/*.whl
+        python -c "import parser; print('Import successful')"
 
-    - name: Upload wheels as artifacts
+    - name: Upload wheels
       uses: actions/upload-artifact@v4
       with:
-        name: wheels
-        path: ./wheelhouse/*.whl
-        retention-days: 7
+        name: wheels-${{ matrix.os }}
+        path: dist/*.whl
 
   build_sdist:
     name: Build source distribution
@@ -75,42 +66,32 @@ jobs:
         python-version: '3.11'
 
     - name: Install protobuf compiler
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y wget unzip
-        wget https://github.com/protocolbuffers/protobuf/releases/download/v29.3/protoc-29.3-linux-x86_64.zip
-        sudo unzip protoc-29.3-linux-x86_64.zip -d /usr/local
-        protoc --version
-
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip setuptools wheel
-        pip install numpy 'protobuf>=5.29.3,<6.0.0' pandas sprocket-boxcars-py openpyxl
-
-    - name: Generate protobuf files
-      run: |
-        python utils/create_proto.py
-        python utils/import_fixer.py
+      uses: arduino/setup-protoc@v3
+      with:
+        repo-token: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Build sdist
-      run: python setup.py sdist
+      uses: PyO3/maturin-action@v1
+      with:
+        command: sdist
+        args: --out dist
 
-    - name: Upload sdist as artifact
+    - name: Upload sdist
       uses: actions/upload-artifact@v4
       with:
         name: sdist
         path: dist/*.tar.gz
-        retention-days: 7
 
   publish:
     name: Publish to PyPI
     needs: [build_wheels, build_sdist]
     runs-on: ubuntu-latest
+    if: github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && github.event.inputs.publish == 'yes')
     environment:
       name: pypi
-      url: https://pypi.org/p/sprocket-carball
+      url: https://pypi.org/p/sprocket-rl-parser
     permissions:
-      id-token: write  # Required for trusted publishing
+      id-token: write
 
     steps:
     - name: Download all artifacts

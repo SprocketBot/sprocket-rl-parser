@@ -17,16 +17,27 @@ def get_proto():
     if os.getenv('PROTOC_PATH'):
         return os.getenv('PROTOC_PATH')
 
+    import shutil
+    result = shutil.which('protoc')
+    if result is not None:
+        return result
 
     if is_windows():
-        return os.path.join(proto_dir, 'protoc.exe')
+        # Check if protoc.exe is in the generated folder (legacy behavior)
+        legacy_path = os.path.join(proto_dir, 'protoc.exe')
+        if os.path.exists(legacy_path):
+            return legacy_path
     else:
-        import shutil
-        result = shutil.which('protoc')
-        if result is not None:
-            return result
-        else:
-            return os.path.join(proto_dir, 'binaries', 'protoc')
+        # Check common locations if shutil.which failed
+        for path in ['/usr/local/bin/protoc', '/usr/bin/protoc']:
+            if os.path.exists(path):
+                return path
+        
+        legacy_path = os.path.join(proto_dir, 'binaries', 'protoc')
+        if os.path.exists(legacy_path):
+            return legacy_path
+    
+    raise FileNotFoundError("Could not find 'protoc'. Please install protobuf compiler and ensure it is in your PATH, or set PROTOC_PATH.")
 
 
 def split_to_list(drive_and_path):
