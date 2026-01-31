@@ -13,7 +13,7 @@ class PlayerDataFrameCheck(PlayerCheck):
         if player.data is not None:
             return [
                 self.check(condition, f'player.data column: {column_name} has truthy values')
-                for column_name, condition in player.data.any(axis=0).iteritems()
+                for column_name, condition in player.data.any(axis=0).items()
                 if column_name in self.included_columns
             ]
         else:

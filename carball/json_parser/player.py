@@ -102,10 +102,24 @@ class Player:
         self.platform = player_stats["Platform"]["value"]
 
         logger.debug('Created Player from stats: %s', self)
+        if self.online_id == '0' or self.online_id == 0 or self.online_id is None:
+            fallback_id = self._get_player_id_from_player_stats(player_stats)
+            if fallback_id is not None:
+                self.online_id = fallback_id
+
         if self.is_bot or self.online_id == '0' or self.online_id == 0:
             self.online_id = get_online_id_for_bot(bot_map, self)
 
         return self
+
+    def _get_player_id_from_player_stats(self, player_stats: dict):
+        player_id = player_stats.get("PlayerID") or {}
+        fields = player_id.get("fields") or {}
+        for key in ("EpicAccountId", "SteamID", "XUID", "PS4", "PSN"):
+            value = fields.get(key)
+            if value:
+                return value
+        return None
 
     def get_camera_settings(self, camera_data: dict):
         self.camera_settings['field_of_view'] = camera_data.get('fov', None)

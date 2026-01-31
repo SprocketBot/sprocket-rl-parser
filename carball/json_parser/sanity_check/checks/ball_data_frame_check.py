@@ -10,5 +10,5 @@ class BallDataFrameCheck(GameCheck):
         ball = self.obj.ball
         return [
             self.check(condition, f'ball data frame column: {column_name} has truthy values')
-            for column_name, condition in ball.any(axis=0).iteritems()
+            for column_name, condition in ball.any(axis=0).items()
         ]
