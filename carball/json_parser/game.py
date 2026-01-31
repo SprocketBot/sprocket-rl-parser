@@ -184,6 +184,13 @@ class Game:
                     found_player = player
                     player_actor_id_player_dict[_player_actor_id] = found_player
                     found_player.parse_actor_data(_player_data, self.replay['objects'])  # just add extra stuff
+                    unique_id, platform = found_player._get_unique_id_and_platform_from_actor(
+                        _player_data
+                    )
+                    if unique_id is not None:
+                        found_player.online_id = unique_id
+                    if platform is not None:
+                        found_player.platform = platform
                     break
             if found_player is None:
                 # player not in endgame stats, create new player

@@ -55,17 +55,39 @@ def get_processed_player_id_map(processed_json):
     return result
 
 
+def assert_processed_players_have_ids_and_platforms(processed_json, replay_name: str):
+    missing = []
+    for player in processed_json.get("players", []):
+        name = player.get("name")
+        player_id = player.get("id", {}).get("id")
+        platform = player.get("platform")
+        if not player_id or not platform:
+            missing.append(
+                {
+                    "name": name,
+                    "id": player_id,
+                    "platform": platform,
+                }
+            )
+    if missing:
+        raise AssertionError(
+            f"Missing player id/platform in {replay_name}: {missing}"
+        )
+
+
 for i, name in enumerate(filenames):
     replay_path = resolve_replay_path(name)
     raw_decomp = carball.decompile_replay(str(replay_path))
     full_anal = carball.analyze_replay_file(str(replay_path))
 
     write_json_to_file(OUTPUT_DIR / f"raw_out_{i}.json", raw_decomp)
-    write_json_to_file(OUTPUT_DIR / f"processed_{i}.json", full_anal.get_json_data())
+    processed_json = full_anal.get_json_data()
+    write_json_to_file(OUTPUT_DIR / f"processed_{i}.json", processed_json)
+    assert_processed_players_have_ids_and_platforms(processed_json, replay_path.name)
 
     zero_id_players = get_player_stats_with_zero_id(raw_decomp)
     if zero_id_players:
-        processed_map = get_processed_player_id_map(full_anal.get_json_data())
+        processed_map = get_processed_player_id_map(processed_json)
         print(f"Replay {replay_path.name} has zero OnlineID in PlayerStats:")
         for player in zero_id_players:
             name = player["name"]

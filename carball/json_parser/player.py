@@ -52,18 +52,45 @@ class Player:
 
     def _get_player_id(self, online_id):
         if type(online_id) == dict:
-            return online_id["online_id"]
+            for key in ("online_id", "id", "EpicAccountId", "SteamID", "XUID", "PS4", "PSN", "name"):
+                value = online_id.get(key)
+                if value not in (None, ""):
+                    return value
+            return None
         return online_id
+
+    def _get_unique_id_and_platform_from_actor(self, actor_data: dict):
+        unique_id = None
+        platform = None
+        remote_id = actor_data.get("Engine.PlayerReplicationInfo:UniqueId", {}).get(
+            "remote_id", {}
+        )
+        if not remote_id:
+            return None, None
+        actor_type = list(remote_id.keys())[0]
+        unique_id = self._get_player_id(remote_id.get(actor_type))
+        platform_map = {
+            "Epic": "OnlinePlatform_Epic",
+            "Steam": "OnlinePlatform_Steam",
+            "Xbox": "OnlinePlatform_Xbox",
+            "XBox": "OnlinePlatform_Xbox",
+            "PlayStation": "OnlinePlatform_PS4",
+            "PS4": "OnlinePlatform_PS4",
+            "PSN": "OnlinePlatform_PS4",
+            "PsyNet": "OnlinePlatform_Epic",
+        }
+        if actor_type.startswith("OnlinePlatform_"):
+            platform = actor_type
+        else:
+            platform = platform_map.get(actor_type)
+        return unique_id, platform
 
     def create_from_actor_data(
         self, actor_data: dict, teams: List["Team"], objects: List[str]
     ):
         self.name = actor_data["name"]
-        actor_type = list(
-            actor_data["Engine.PlayerReplicationInfo:UniqueId"]["remote_id"].keys()
-        )[0]
-        self.online_id = self._get_player_id(
-            actor_data["Engine.PlayerReplicationInfo:UniqueId"]["remote_id"][actor_type]
+        self.online_id, self.platform = self._get_unique_id_and_platform_from_actor(
+            actor_data
         )
         try:
             self.score = actor_data["TAGame.PRI_TA:MatchScore"]
@@ -90,7 +117,7 @@ class Player:
 
     def parse_player_stats(self, player_stats: dict):
         self.name = player_stats["Name"]
-        self.online_id = player_stats["OnlineID"]
+        self.online_id = None
         self.is_orange = bool(player_stats["Team"])
         self.score = player_stats["Score"]
         self.goals = player_stats["Goals"]
@@ -101,16 +128,7 @@ class Player:
         self.platform = player_stats["Platform"]["value"]
 
         logger.debug("Created Player from stats: %s", self)
-        if self.online_id == "0" or self.online_id == 0 or self.online_id is None:
-            fallback_id, fallback_platform = self._get_player_id_from_player_stats(
-                player_stats
-            )
-            if fallback_id is not None:
-                self.online_id = fallback_id
-                if fallback_platform is not None:
-                    self.platform = fallback_platform
-
-        if self.is_bot or self.online_id == "0" or self.online_id == 0:
+        if self.is_bot:
             self.online_id = get_online_id_for_bot(bot_map, self)
 
         return self
