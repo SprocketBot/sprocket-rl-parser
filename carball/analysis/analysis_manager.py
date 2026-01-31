@@ -14,6 +14,7 @@ from ..analysis.cleaner.cleaner import clean_replay
 import logging
 import time
 from typing import Dict, Callable, Union
+from collections import Counter
 
 import pandas as pd
 import json
@@ -326,6 +327,14 @@ class AnalysisManager:
 
     def _create_player_id_function(self, game: Game) -> Callable:
         name_map = {player.name: player.online_id for player in game.players}
+        name_counts = Counter(player.name for player in game.players)
+        dupes = {name: [p.online_id for p in game.players if p.name == name]
+                 for name, count in name_counts.items() if count > 1}
+        if dupes:
+            logger.warning(
+                "Duplicate player names detected; ID mapping by name will overwrite: %s",
+                dupes,
+            )
 
         def create_name(proto_player_id, name):
             proto_player_id.id = str(name_map[name])

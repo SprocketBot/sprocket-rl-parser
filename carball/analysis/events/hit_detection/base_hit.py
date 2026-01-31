@@ -76,7 +76,7 @@ class BaseHit:
         collision_distances_data_frame.columns = pd.MultiIndex.from_tuples(columns)
 
         collision_distances_data_frame['closest_player', 'name'] = None
-        collision_distances_data_frame['closest_player', 'distance'] = None
+        collision_distances_data_frame['closest_player', 'distance'] = np.nan
         for hit_team_no in [0, 1]:
             try:
                 collision_distances_for_team = collision_distances_data_frame[
@@ -86,14 +86,12 @@ class BaseHit:
                     (collision_distances_for_team < 300).any(axis=1)
                 ]
 
-                collision_distances_data_frame['closest_player', 'distance'].fillna(
-                    close_collision_distances_for_team.min(axis=1),
-                    inplace=True
-                )
-                collision_distances_data_frame['closest_player', 'name'].fillna(
-                    close_collision_distances_for_team.idxmin(axis=1),
-                    inplace=True
-                )
+                collision_distances_data_frame.loc[:, ('closest_player', 'distance')] = collision_distances_data_frame['closest_player', 'distance'].fillna(
+                    close_collision_distances_for_team.min(axis=1)
+                ).infer_objects(copy=False)
+                collision_distances_data_frame.loc[:, ('closest_player', 'name')] = collision_distances_data_frame['closest_player', 'name'].fillna(
+                    close_collision_distances_for_team.idxmin(axis=1)
+                ).infer_objects(copy=False)
             except KeyError as e:
                 if e.args[0] == hit_team_no:
                     logger.warning("Team %s did not hit the ball", str(hit_team_no))
