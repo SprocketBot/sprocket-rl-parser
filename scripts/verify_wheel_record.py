@@ -51,8 +51,9 @@ def verify_wheel(wheel_path: Path) -> bool:
             file_path, hash_value, size_value = parse_record_row(row)
             if not file_path or file_path == record_path:
                 continue
+            normalized_path = file_path.replace("\\", "/")
             try:
-                data = zf.read(file_path)
+                data = zf.read(normalized_path)
             except KeyError:
                 print(f"[FAIL] {wheel_path.name}: missing file {file_path}")
                 ok = False
