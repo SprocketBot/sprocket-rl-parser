@@ -97,6 +97,19 @@ class Player:
             )
         if unique_id is not None and platform is not None:
             unique_id_str = str(unique_id)
+            if platform == "OnlinePlatform_PS4":
+                # PSN IDs are the account name; numeric IDs are not useful for downstream systems.
+                if unique_id_str.isdigit():
+                    psn_name = actor_data.get("name")
+                    if psn_name:
+                        unique_id = psn_name
+                        unique_id_str = psn_name
+                    else:
+                        logger.error(
+                            "PSN numeric UniqueId without player name: player=%s unique_id=%s",
+                            actor_data.get("name"),
+                            unique_id_str,
+                        )
             if platform == "OnlinePlatform_Xbox":
                 # Normalize XUIDs to little-endian 8-byte hex to match common ecosystem IDs.
                 if unique_id_str.isdigit():
