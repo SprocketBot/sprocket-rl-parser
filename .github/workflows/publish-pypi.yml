@@ -113,6 +113,10 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
 
       - name: Install Protoc
         uses: arduino/setup-protoc@v3
@@ -150,6 +154,8 @@ jobs:
           manylinux: auto
         env:
           PROTOC: protoc
+      - name: Verify wheel RECORD
+        run: python scripts/verify_wheel_record.py dist
 
       - name: Upload wheels
         uses: actions/upload-artifact@v4
@@ -196,6 +202,10 @@ jobs:
       id-token: write
     steps:
       - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
 
       - name: Download all wheels
         uses: actions/download-artifact@v4
@@ -208,6 +218,8 @@ jobs:
           find dist-all -name '*.whl' -exec cp {} dist/ \;
           find dist-all -name '*.tar.gz' -exec cp {} dist/ \;
           ls -lah dist/
+      - name: Verify wheel RECORD
+        run: python scripts/verify_wheel_record.py dist
 
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
