@@ -59,9 +59,7 @@ class PickupAnalysis:
         # Get the index of the frame we most recently entered a pad range, per frame.
         df['recent_entry_index'] = df.index
         df.loc[df['status_change'] <= 0, 'recent_entry_index'] = 0
-        df['recent_entry_index'] = df['recent_entry_index'].replace(0, np.nan).fillna(
-            method='bfill', limit=cls.LAG_BACK).fillna(
-            method='ffill', limit=cls.LAG_FORWARD)
+        df['recent_entry_index'] = df['recent_entry_index'].replace(0, np.nan).fillna(limit=cls.LAG_BACK).fillna(limit=cls.LAG_FORWARD)
         gains_frames = df.loc[
             ((df['gains'] > 5) & (df['boost'] != 33.33333)) | ((df['gains'] > 0) & (df['boost'] > 95.0))].copy()
 
