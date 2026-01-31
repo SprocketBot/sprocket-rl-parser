@@ -326,6 +326,49 @@ class AnalysisManager:
         return data_frame
 
     def _create_player_id_function(self, game: Game) -> Callable:
+        for player in game.players:
+            if getattr(player, "is_bot", False):
+                if getattr(player, "id_source", None) != "bot":
+                    logger.error(
+                        "Bot player missing bot id_source: name=%s online_id=%s",
+                        player.name,
+                        player.online_id,
+                    )
+                continue
+            if getattr(player, "id_source", None) != "unique_id":
+                logger.error(
+                    "Non-bot player missing UniqueId source: name=%s online_id=%s platform=%s id_source=%s",
+                    player.name,
+                    player.online_id,
+                    player.platform,
+                    getattr(player, "id_source", None),
+                )
+                raise ValueError(
+                    f"Non-bot player missing UniqueId source: {player.name}"
+                )
+            if getattr(player, "platform_source", None) != "unique_id":
+                logger.error(
+                    "Non-bot player platform not from UniqueId: name=%s online_id=%s platform=%s platform_source=%s",
+                    player.name,
+                    player.online_id,
+                    player.platform,
+                    getattr(player, "platform_source", None),
+                )
+            if (
+                isinstance(player.online_id, str)
+                and player.online_id.startswith("b")
+                and player.online_id.endswith("b")
+                and len(player.online_id) == 11
+            ):
+                logger.error(
+                    "Non-bot player has hashed bot-like id: name=%s online_id=%s",
+                    player.name,
+                    player.online_id,
+                )
+                raise ValueError(
+                    f"Non-bot player has hashed bot-like id: {player.name}"
+                )
+
         name_map = {player.name: player.online_id for player in game.players}
         name_counts = Counter(player.name for player in game.players)
         dupes = {name: [p.online_id for p in game.players if p.name == name]

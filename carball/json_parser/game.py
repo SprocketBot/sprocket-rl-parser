@@ -189,8 +189,25 @@ class Game:
                     )
                     if unique_id is not None:
                         found_player.online_id = unique_id
+                        found_player.id_source = "unique_id"
                     if platform is not None:
                         found_player.platform = platform
+                        found_player.platform_source = "unique_id"
+                    if getattr(found_player, "is_bot", False):
+                        logger.error(
+                            "Player flagged as bot but has UniqueId: name=%s unique_id=%s platform=%s",
+                            found_player.name,
+                            unique_id,
+                            platform,
+                        )
+                    if platform is None:
+                        logger.error(
+                            "Platform missing after UniqueId parse: name=%s unique_id=%s current_platform=%s platform_source=%s",
+                            found_player.name,
+                            unique_id,
+                            found_player.platform,
+                            getattr(found_player, "platform_source", None),
+                        )
                     break
             if found_player is None:
                 # player not in endgame stats, create new player

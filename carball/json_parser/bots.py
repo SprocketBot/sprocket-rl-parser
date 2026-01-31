@@ -73,13 +73,9 @@ def get_bot_map():
 
 
 def get_online_id_for_bot(bot_map, player):
+    logger.warning("Generating bot id for player flagged as bot: name=%s", player.name)
     try:
         return 'b' + str(bot_map[player.name]) + 'b'
     except:
-        logger.warning('Found bot not in bot list')
-        try:
-            return 'b' + h11(str(player.name).encode('utf-8').lower()) + 'b'
-        except:
-            logger.warning('bot has invalid name')
-            return 'invalid_name'
-
+        logger.error('Found bot not in bot list; refusing to hash name for id. bot_name=%s', player.name)
+        raise ValueError(f"Bot name not in bot list: {player.name}")

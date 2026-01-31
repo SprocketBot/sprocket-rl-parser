@@ -66,6 +66,11 @@ class Player:
             "remote_id", {}
         )
         if not remote_id:
+            logger.error(
+                "Missing UniqueId remote_id for player=%s actor_keys=%s",
+                actor_data.get("name"),
+                list(actor_data.keys()),
+            )
             return None, None
         actor_type = list(remote_id.keys())[0]
         unique_id = self._get_player_id(remote_id.get(actor_type))
@@ -83,6 +88,38 @@ class Player:
             platform = actor_type
         else:
             platform = platform_map.get(actor_type)
+        if platform is None:
+            logger.error(
+                "Unknown platform from UniqueId: player=%s actor_type=%s unique_id=%s",
+                actor_data.get("name"),
+                actor_type,
+                unique_id,
+            )
+        if unique_id is not None and platform is not None:
+            unique_id_str = str(unique_id)
+            if platform == "OnlinePlatform_Xbox":
+                # Normalize XUIDs to little-endian 8-byte hex to match common ecosystem IDs.
+                if unique_id_str.isdigit():
+                    try:
+                        unique_id_str = int(unique_id_str).to_bytes(8, "little").hex()
+                        unique_id = unique_id_str
+                    except OverflowError:
+                        logger.error(
+                            "XUID too large to convert to 8-byte hex: player=%s unique_id=%s",
+                            actor_data.get("name"),
+                            unique_id_str,
+                        )
+            is_epic_guid = (
+                len(unique_id_str) == 32 and all(c in "0123456789abcdefABCDEF" for c in unique_id_str)
+            )
+            if is_epic_guid and platform != "OnlinePlatform_Epic":
+                logger.error(
+                    "Epic-looking UniqueId with non-Epic platform: player=%s unique_id=%s platform=%s actor_type=%s",
+                    actor_data.get("name"),
+                    unique_id_str,
+                    platform,
+                    actor_type,
+                )
         return unique_id, platform
 
     def create_from_actor_data(
@@ -92,6 +129,10 @@ class Player:
         self.online_id, self.platform = self._get_unique_id_and_platform_from_actor(
             actor_data
         )
+        if self.online_id is not None:
+            self.id_source = "unique_id"
+        if self.platform is not None:
+            self.platform_source = "unique_id"
         try:
             self.score = actor_data["TAGame.PRI_TA:MatchScore"]
         except KeyError:
@@ -126,10 +167,19 @@ class Player:
         self.shots = player_stats["Shots"]
         self.is_bot = player_stats["bBot"]
         self.platform = player_stats["Platform"]["value"]
+        self.platform_source = "player_stats"
 
         logger.debug("Created Player from stats: %s", self)
         if self.is_bot:
+            logger.error(
+                "Player flagged as bot in PlayerStats: name=%s online_id=%s platform=%s player_id=%s",
+                self.name,
+                player_stats.get("OnlineID"),
+                self.platform,
+                player_stats.get("PlayerID"),
+            )
             self.online_id = get_online_id_for_bot(bot_map, self)
+            self.id_source = "bot"
 
         return self
 
