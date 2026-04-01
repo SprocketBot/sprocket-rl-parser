@@ -19,9 +19,26 @@ fn parse_replay(data: &[u8]) -> PyResult<PyObject> {
     })
 }
 
+#[pyfunction]
+fn parse_replay_header_only(data: &[u8]) -> PyResult<PyObject> {
+    let replay = boxcars::ParserBuilder::new(data)
+        .with_network_parse(NetworkParse::Never)
+        .on_error_check_crc()
+        .parse()
+        .map_err(to_py_error)?;
+
+    let replay = serde_json::to_value(replay).map_err(to_py_error)?;
+
+    Python::with_gil(|py| {
+        let replay = convert_to_py(py, &replay);
+        Ok(replay)
+    })
+}
+
 #[pymodule]
 fn _lib(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(parse_replay, m)?)?;
+    m.add_function(wrap_pyfunction!(parse_replay_header_only, m)?)?;
     Ok(())
 }
 

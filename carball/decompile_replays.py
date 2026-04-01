@@ -1,6 +1,7 @@
 import logging
 import os
 from ._lib import parse_replay
+from ._lib import parse_replay_header_only
 
 from carball.analysis.analysis_manager import AnalysisManager
 from carball.controls.controls import ControlsCreator
@@ -21,6 +22,31 @@ def decompile_replay(replay_path):
     with open(replay_path, 'rb') as f:
         buf = f.read()
     return parse_replay(buf)
+
+
+def decompile_replay_header_only(replay_path):
+    """
+    Takes a path to the replay and outputs header-only replay json.
+
+    This intentionally skips network frame parsing so metadata and player
+    identity fields remain available even when full frame analysis fails.
+
+    :param replay_path: Path to a specific replay.
+    :return: The header-only object created from boxcars.
+    """
+    with open(replay_path, 'rb') as f:
+        buf = f.read()
+    return parse_replay_header_only(buf)
+
+
+def summarize_replay_file(replay_path):
+    """
+    Backwards-compatible metadata-only helper.
+
+    :param replay_path: Path to replay file
+    :return: Header-only replay payload
+    """
+    return decompile_replay_header_only(replay_path)
 
 
 def analyze_replay_file(replay_path: str, controls: ControlsCreator = None,
