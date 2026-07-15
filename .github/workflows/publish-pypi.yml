@@ -152,6 +152,12 @@ jobs:
           args: --release --out dist --interpreter 3.8 3.9 3.10 3.11 3.12
           sccache: 'true'
           manylinux: auto
+          docker-options: ${{ matrix.os == 'ubuntu-latest' && '-e PROTOC=/tmp/protoc/bin/protoc' || '' }}
+          before-script-linux: |
+            curl -fsSL -o /tmp/protoc.zip https://github.com/protocolbuffers/protobuf/releases/download/v29.5/protoc-29.5-linux-x86_64.zip
+            rm -rf /tmp/protoc
+            python3 -m zipfile -e /tmp/protoc.zip /tmp/protoc
+            /tmp/protoc/bin/protoc --version
         env:
           PROTOC: protoc
       - name: Verify wheel RECORD
