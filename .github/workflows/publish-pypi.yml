@@ -157,6 +157,7 @@ jobs:
             curl -fsSL -o /tmp/protoc.zip https://github.com/protocolbuffers/protobuf/releases/download/v29.5/protoc-29.5-linux-x86_64.zip
             rm -rf /tmp/protoc
             python3 -m zipfile -e /tmp/protoc.zip /tmp/protoc
+            chmod 0755 /tmp/protoc/bin/protoc
             /tmp/protoc/bin/protoc --version
         env:
           PROTOC: protoc
