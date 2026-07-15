@@ -16,9 +16,9 @@ checksum = "40ce3582fb888755eb1a77668e69f90c3b317fdcc85bbeacd0d9bdfa89427173"
 
 [[package]]
 name = "boxcars"
-version = "0.10.11"
+version = "0.11.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "83d1dfdbdbd7921631afcb379cca971f5a8597eb5e35ab6dcb59ed4d7d6d56b7"
+checksum = "fc110464d93fffff294676ebde6b8e8d72e29c0ce681a70e45f438e7717b5b5f"
 dependencies = [
  "bitter",
  "encoding_rs",
@@ -321,7 +321,7 @@ checksum = "b2aa850e253778c88a04c3d7323b043aeda9d3e30d5971937c1855769763678e"
 
 [[package]]
 name = "sprocket-rl-parser"
-version = "1.2.2"
+version = "1.2.4"
 dependencies = [
  "boxcars",
  "pyo3",
