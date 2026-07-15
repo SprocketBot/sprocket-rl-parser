@@ -1,4 +1,5 @@
 import gzip
+import inspect
 import io
 import struct
 import numpy as np
@@ -27,7 +28,7 @@ def convert_numpy_array(numpy_array: np.ndarray):
     :return: A BytesIO object that contains compressed bytes
     """
     compressed_array = io.BytesIO()  # np.savez_compressed() requires a file-like object to write to
-    np.save(compressed_array, numpy_array, allow_pickle=True, fix_imports=False)
+    np.save(compressed_array, numpy_array, allow_pickle=True)
     return compressed_array
 
 
@@ -51,9 +52,12 @@ def get_array(file, chunk):
         raise EOFError('Struct error')
     numpy_bytes = file.read(starting_byte)
     fake_file = io.BytesIO(numpy_bytes)
+    load_kwargs = {"allow_pickle": True}
+    if "fix_imports" in inspect.signature(np.load).parameters:
+        load_kwargs["fix_imports"] = False
     try:
         # explicitly allow pickle loading. thanks numpy for changing this without telling anyone
-        result = np.load(fake_file, fix_imports=False, allow_pickle=True)
+        result = np.load(fake_file, allow_pickle=True)
     except OSError:
         raise EOFError('NumPy parsing error')
     return result, starting_byte

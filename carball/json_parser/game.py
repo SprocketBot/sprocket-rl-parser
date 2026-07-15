@@ -68,8 +68,6 @@ class Game:
 
         logger.debug('Loaded JSON')
 
-        self.replay_data = self.replay['network_frames']['frames']
-
         # set properties
         self.properties = self.replay['properties']
         self.replay_id = self.properties['Id']
@@ -102,9 +100,13 @@ class Game:
         self.primary_player: dict = self.get_primary_player()
 
         if parse_replay:
+            self.replay_data = self._require_network_frames()
             self.all_data = parse_frames(self)
             self.parse_all_data(self.all_data, clean_player_names)
             logger.info("Finished parsing %s" % self)
+        else:
+            self.replay_data = None
+            self._initialize_summary_state()
 
     def __repr__(self):
         team_0_name = self.teams[0].name
@@ -151,6 +153,50 @@ class Game:
             goal = Goal(goal_dict, self)
             goals_list.append(goal)
         return goals_list
+
+    def _require_network_frames(self):
+        network_frames = self.replay.get('network_frames')
+        if not isinstance(network_frames, dict):
+            raise ValueError(
+                "Replay is missing parsed network frames. Use summarize_replay_file for header-only parsing."
+            )
+
+        frames = network_frames.get('frames')
+        if frames is None:
+            raise ValueError(
+                "Replay is missing parsed network frames. Use summarize_replay_file for header-only parsing."
+            )
+        if not isinstance(frames, list):
+            raise TypeError(f"Replay network frames must be a list, got {type(frames).__name__}")
+        return frames
+
+    def _initialize_summary_state(self) -> None:
+        teams = []
+        for is_orange in (False, True):
+            team = Team()
+            team.is_orange = is_orange
+            team.name = None
+            team.score = sum(1 for goal in self.goals if bool(goal.player_team) == is_orange)
+            team.actor_id = None
+            teams.append(team)
+
+        self.teams = teams
+        for player in self.players:
+            for team in self.teams:
+                if player.is_orange == team.is_orange:
+                    team.add_player(player)
+                    break
+
+        self.frames = None
+        self.ball = None
+        self.kickoff_frames = None
+        self.demos = []
+        self.parties = {}
+        self.dropshot = {
+            'damage_events': [],
+            'tile_frames': {},
+            'ball_events': [],
+        }
 
 
     def parse_all_data(self, all_data, clean_player_names: bool) -> None:

@@ -25,3 +25,6 @@ Parser format.png
 
 *.so
 *_rustc
+# Local compiled parser artifacts; keep the canonical tracked build.
+carball/_lib.cpython-*.so
+!carball/_lib.cpython-313-darwin.so

@@ -23,6 +23,17 @@ json_game = analysis_manager.get_json_data()
 data_frame = analysis_manager.get_data_frame()
 ```
 
+If you only need replay metadata and want to avoid parsing network frames entirely:
+```python
+summary_manager = carball.summarize_replay_file("path/to/replay.replay")
+
+# Protobuf metadata only
+proto_game = summary_manager.get_protobuf_data()
+
+# JSON-friendly dict without frame data
+json_game = summary_manager.get_json_data()
+```
+
 ## CLI
 The package installs a `carball` command for one-off parsing.
 
@@ -82,3 +93,5 @@ analysis_manager = carball.analyze_replay_file(
 ## Troubleshooting
 - If you see missing or invalid data, try `calculate_intensive_events=False` and `clean=True` first.
 - For reproducible analysis, make sure you are parsing the raw `.replay` file and not a previously decompiled JSON.
+- If a replay no longer has parsable network frames after a game update, use `summarize_replay_file()` or
+  `decompile_replay_header_only()` for header-only parsing.

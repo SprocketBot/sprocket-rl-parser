@@ -1,15 +1,25 @@
 import logging
 import os
-from ._lib import parse_replay
-from ._lib import parse_replay_header_only
+from ._lib import parse_replay, parse_replay_header_only
 
 from carball.analysis.analysis_manager import AnalysisManager
+from carball.analysis.summary_manager import SummaryManager
 from carball.controls.controls import ControlsCreator
 from carball.extras.per_goal_analysis import PerGoalAnalysis
 from carball.json_parser.game import Game
 from carball.json_parser.sanity_check.sanity_check import SanityChecker
 
 BASE_DIR = os.path.dirname(__file__)
+
+
+def _read_replay_bytes(replay_path):
+    with open(replay_path, 'rb') as f:
+        return f.read()
+
+
+def _has_network_frames(replay_json):
+    network_frames = replay_json.get("network_frames")
+    return isinstance(network_frames, dict) and isinstance(network_frames.get("frames"), list)
 
 
 def decompile_replay(replay_path):
@@ -19,9 +29,17 @@ def decompile_replay(replay_path):
     :param replay_path: Path to a specific replay.
     :return: The object created from boxcars.
     """
-    with open(replay_path, 'rb') as f:
-        buf = f.read()
-    return parse_replay(buf)
+    return parse_replay(_read_replay_bytes(replay_path))
+
+
+def decompile_replay_header_only(replay_path):
+    """
+    Takes a path to the replay and outputs header/summary JSON without parsing network frames.
+
+    :param replay_path: Path to a specific replay.
+    :return: The object created from boxcars.
+    """
+    return parse_replay_header_only(_read_replay_bytes(replay_path))
 
 
 def decompile_replay_header_only(replay_path):
@@ -72,6 +90,10 @@ def analyze_replay_file(replay_path: str, controls: ControlsCreator = None,
         logging.getLogger("carball").setLevel(logging_level)
 
     _json = decompile_replay(replay_path)
+    if not _has_network_frames(_json):
+        raise ValueError(
+            "Replay is missing parsed network frames. Use summarize_replay_file for header-only parsing."
+        )
     game = Game()
     game.initialize(loaded_json=_json)
     # get_controls(game)  # TODO: enable and optimise.
@@ -88,6 +110,25 @@ def analyze_replay_file(replay_path: str, controls: ControlsCreator = None,
         controls.get_controls(game)
 
     return analysis
+
+
+def summarize_replay_file(replay_path: str, logging_level=logging.NOTSET):
+    """
+    Parse replay metadata from the header without touching network frames.
+
+    :param replay_path: Path to replay file
+    :param logging_level: Sets the logging level globally across carball
+    :return: SummaryManager populated from replay header metadata.
+    """
+    if logging_level != logging.NOTSET:
+        logging.getLogger("carball").setLevel(logging_level)
+
+    replay_json = decompile_replay_header_only(replay_path)
+    game = Game()
+    game.initialize(loaded_json=replay_json, parse_replay=False)
+    summary = SummaryManager(game)
+    summary.create_summary()
+    return summary
 
 
 if __name__ == '__main__':
