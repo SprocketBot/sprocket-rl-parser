@@ -4,8 +4,6 @@ on:
   push:
     branches: [ main ]
   workflow_dispatch:
-  schedule:
-    - cron: '0 0 * * *'  # Daily at midnight UTC
 
 jobs:
   check-version:
@@ -24,7 +22,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install toml requests
+          pip install packaging requests toml
 
       - name: Check if dependencies changed
         id: check
@@ -33,6 +31,7 @@ jobs:
           import toml
           import requests
           import os
+          from packaging.version import Version
 
           # Read current Cargo.toml
           with open('Cargo.toml', 'r') as f:
@@ -43,41 +42,34 @@ jobs:
               pyproject = toml.load(f)
 
           current_version = pyproject['project']['version']
+          cargo_version = cargo_toml['package']['version']
+
+          if current_version != cargo_version:
+              raise ValueError(
+                  f"Package versions must match: pyproject.toml={current_version}, "
+                  f"Cargo.toml={cargo_version}"
+              )
 
           # Get boxcars dependency version
           boxcars_version = cargo_toml['dependencies']['boxcars']
           if isinstance(boxcars_version, dict):
               boxcars_version = boxcars_version.get('version', '')
 
-          # Check latest version on PyPI
-          try:
-              response = requests.get('https://pypi.org/pypi/sprocket-rl-parser/json')
-              if response.status_code == 200:
-                  pypi_data = response.json()
-                  latest_pypi_version = pypi_data['info']['version']
+          # Only publish a version explicitly committed to both manifests.
+          response = requests.get(
+              'https://pypi.org/pypi/sprocket-rl-parser/json', timeout=15
+          )
+          response.raise_for_status()
+          latest_pypi_version = response.json()['info']['version']
 
-                  # Check if PyPI package has same boxcars version in metadata
-                  # We'll compare versions to see if we need to bump
-                  print(f"Current PyPI version: {latest_pypi_version}")
-                  print(f"Current local version: {current_version}")
-                  print(f"Boxcars dependency: {boxcars_version}")
+          print(f"Current PyPI version: {latest_pypi_version}")
+          print(f"Current local version: {current_version}")
+          print(f"Boxcars dependency: {boxcars_version}")
 
-                  # For now, we'll trigger a publish if workflow is manually triggered
-                  # or if it's been a day and there might be updates
-                  should_publish = "true"
-
-                  # Calculate new version (bump patch)
-                  parts = latest_pypi_version.split('.')
-                  new_patch = int(parts[2]) + 1
-                  new_version = f"{parts[0]}.{parts[1]}.{new_patch}"
-              else:
-                  # Package doesn't exist on PyPI yet
-                  should_publish = "true"
-                  new_version = current_version
-          except Exception as e:
-              print(f"Error checking PyPI: {e}")
-              should_publish = "true"
-              new_version = current_version
+          should_publish = str(
+              Version(current_version) > Version(latest_pypi_version)
+          ).lower()
+          new_version = current_version
 
           # Set outputs
           with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
@@ -124,25 +116,15 @@ jobs:
           version: "29.x"
           repo-token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Update version in pyproject.toml
+      - name: Verify version in pyproject.toml
         shell: bash
         run: |
-          VERSION="${{ needs.check-version.outputs.new_version }}"
-          if [[ "$OSTYPE" == "darwin"* ]]; then
-            sed -i '' "s/^version = .*/version = \"$VERSION\"/" pyproject.toml
-          else
-            sed -i "s/^version = .*/version = \"$VERSION\"/" pyproject.toml
-          fi
+          test "$(python -c 'import tomllib; print(tomllib.load(open("pyproject.toml", "rb"))["project"]["version"])')" = "${{ needs.check-version.outputs.new_version }}"
 
-      - name: Update version in Cargo.toml
+      - name: Verify version in Cargo.toml
         shell: bash
         run: |
-          VERSION="${{ needs.check-version.outputs.new_version }}"
-          if [[ "$OSTYPE" == "darwin"* ]]; then
-            sed -i '' "s/^version = .*/version = \"$VERSION\"/" Cargo.toml
-          else
-            sed -i "s/^version = .*/version = \"$VERSION\"/" Cargo.toml
-          fi
+          test "$(python -c 'import tomllib; print(tomllib.load(open("Cargo.toml", "rb"))["package"]["version"])')" = "${{ needs.check-version.outputs.new_version }}"
 
       - name: Build wheels
         uses: PyO3/maturin-action@v1
