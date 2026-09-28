@@ -113,7 +113,7 @@ jobs:
       - name: Install Protoc
         uses: arduino/setup-protoc@v3
         with:
-          version: "29.x"
+          version: "29.5"
           repo-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Verify version in pyproject.toml
@@ -165,7 +165,7 @@ jobs:
       - name: Install Protoc
         uses: arduino/setup-protoc@v3
         with:
-          version: "29.x"
+          version: "29.5"
           repo-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Build sdist
         uses: PyO3/maturin-action@v1

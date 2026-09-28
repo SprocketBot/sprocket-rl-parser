@@ -1,6 +1,7 @@
 import os
 import platform
-from subprocess import call
+import shutil
+from subprocess import call, check_output
 
 
 def is_windows():
@@ -12,6 +13,10 @@ current_dir = os.path.dirname(os.path.dirname(__file__))
 
 proto_dir = os.path.join(current_dir, 'carball', 'generated')
 
+# protoc 29.5 generates code requiring Python protobuf >=5.29.5.
+# Keep this aligned with the runtime constraints and CI compiler versions.
+PROTOC_VERSION = '29.5'
+
 
 def get_proto():
     # Check common environment variables
@@ -22,12 +27,11 @@ def get_proto():
             if os.path.exists(val):
                 return val
             # Others might set it to the command name
-            import shutil
             result = shutil.which(val)
             if result:
                 return result
+            raise FileNotFoundError(f"{env_var}={val!r} does not name an existing protoc executable.")
 
-    import shutil
     result = shutil.which('protoc')
     if result is not None:
         return result
@@ -50,70 +54,53 @@ def get_proto():
     raise FileNotFoundError("Could not find 'protoc'. Please install protobuf compiler and ensure it is in your PATH, or set PROTOC_PATH.")
 
 
-def split_to_list(drive_and_path):
-    path = os.path.splitdrive(drive_and_path)[1]
-    folders = []
-    while 1:
-        path, folder = os.path.split(path)
-
-        if folder != "":
-            folders.append(folder)
-        else:
-            if path != "":
-                folders.append(path)
-
-            break
-
-    folders.reverse()
-    return folders
+def validate_proto_version(protoc):
+    version = check_output([protoc, '--version'], text=True).strip()
+    if version != f'libprotoc {PROTOC_VERSION}':
+        raise RuntimeError(
+            f"Expected protoc {PROTOC_VERSION}, but {protoc!r} reports {version!r}. "
+            "Using a different compiler can generate code incompatible with the "
+            "protobuf runtime declared by this project. Install protoc "
+            f"{PROTOC_VERSION} and set PROTOC_PATH to its executable."
+        )
 
 
 def get_dir():
     return current_dir
 
 
-def get_deepness(top_level_dir, path_list):
-    return len(path_list) - path_list.index(top_level_dir)
-
-
 def get_file_list(top_level_dir, exclude_dir=None, file_extension='.py'):
-    proto_directories = [x[0] for x in os.walk(get_dir()) if top_level_dir in x[0] and '__pycache__' not in x[0]]
-
+    # Walk only the requested project directory, never matching copies in
+    # virtualenvs, build output, or installed wheels elsewhere in the checkout.
+    root = os.path.join(get_dir(), top_level_dir)
     file_result = []
-
-    path_lists = []
-    for path in proto_directories:
+    for path, directories, files in os.walk(root):
+        directories[:] = sorted(d for d in directories if d != '__pycache__')
         if exclude_dir is not None and exclude_dir in path:
+            directories[:] = []
             continue
-        path_list = split_to_list(path)
-        try:
-            deepness = get_deepness(top_level_dir, path_list)
-        except ValueError:
-            print(f"Skipping {path} because {top_level_dir} is not in {path_list}")
-            continue
-        left_over_paths = path_list[-deepness:]
-        path_lists.append((path, deepness, left_over_paths))
-    for path_item in path_lists:
-        path = path_item[0]
-        only_files = [(os.path.join(path, f), f) for f in os.listdir(path) if os.path.isfile(os.path.join(path, f))
-                      and file_extension in f and '__init__' not in f]
-        for file in only_files:
-            file_result.append((path_item[1], file[0]))
+        relative = os.path.relpath(path, root)
+        deepness = 1 if relative == '.' else len(relative.split(os.sep)) + 1
+        for name in sorted(files):
+            if name.endswith(file_extension) and '__init__' not in name:
+                file_result.append((deepness, os.path.join(path, name)))
     return file_result
 
 
 def create_proto_files():
     print('###CREATING PROTO FILES###')
 
+    # Reject incompatible compilers before rewriting any generated files.
+    protoc = get_proto()
+    validate_proto_version(protoc)
+
     # Ensure the output directory exists
     os.makedirs(proto_dir, exist_ok=True)
 
     file_list = get_file_list(top_level_dir='api', file_extension='.proto')
-    for file in file_list:
-        path = file[0]
-        file = file[1]
+    for _, file in file_list:
         print('creating proto file', file, end='\t')
-        result = call([get_proto(), '--python_out=' + proto_dir, '--proto_path=' + current_dir, file])
+        result = call([protoc, '--python_out=' + proto_dir, '--proto_path=' + current_dir, file])
         if result != 0:
             raise ValueError(result)
         print(result)

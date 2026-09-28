@@ -6,6 +6,9 @@ fn main() {
     // or if we want protos generated during development.
     println!("cargo:rerun-if-changed=api/");
     println!("cargo:rerun-if-changed=utils/");
+    println!("cargo:rerun-if-env-changed=PROTOC_PATH");
+    println!("cargo:rerun-if-env-changed=PROTOC");
+    println!("cargo:rerun-if-env-changed=PYTHON");
 
     let python = env::var("PYTHON").unwrap_or_else(|_| "python3".to_string());
 

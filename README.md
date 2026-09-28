@@ -7,6 +7,24 @@ protobuf metadata, JSON output, and a pandas DataFrame for frame-by-frame analys
 pip install sprocket-rl-parser
 ```
 
+### Building from source
+
+Source builds require Rust, Python >=3.8, and **protoc 29.5**. Install the
+[protoc 29.5 release](https://github.com/protocolbuffers/protobuf/releases/tag/v29.5)
+for your platform and put its `bin` directory on `PATH`, or set `PROTOC_PATH`
+to the compiler executable:
+
+```bash
+export PROTOC_PATH=/path/to/protoc-29.5/bin/protoc
+python -m pip install .
+```
+
+The build regenerates `carball/generated` from `api/`. Protoc 29.5 generates
+Python code requiring `protobuf>=5.29.5,<6.0.0`, the runtime range declared by
+this project. Other compiler versions are rejected before generation so a
+newer system compiler cannot silently produce an incompatible wheel.
+Installing a prebuilt wheel does not require protoc.
+
 ## Quickstart (Python)
 ```python
 import carball
